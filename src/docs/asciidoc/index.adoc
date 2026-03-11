@@ -1,0 +1,21 @@
+= nf-oci
+Jorge Aguilera <jorge@incsteps.com>
+:toc: left
+:imagesdir: images
+
+an OCI (Oracle Cloud Infrastructure) plugin for Nextflow
+
+== Install
+
+To install the plugin, add the plugin into your `nextflow.config`
+
+.nextflow.config
+[source]
+----
+plugins {
+    id "nf-oci@${version}"
+}
+----
+
+Once installed the plugin provides several integrations with OCI platform
+

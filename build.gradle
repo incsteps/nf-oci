@@ -1,0 +1,31 @@
+plugins {
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.10'
+}
+
+dependencies {
+    compileOnly 'io.nextflow:nf-lang:25.04.4'
+    implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.80.3'
+    implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.80.3'
+}
+
+asciidoctor{
+
+    resources {
+        from('src/docs/asciidoc/images') {
+            include '**/*.png'
+        }
+
+        into './images'
+    }
+}
+
+nextflowPlugin {
+    nextflowVersion = '25.04.4'
+
+    provider = 'Incremental Steps'
+    className = 'incsteps.plugin.oci.OciPlugin'
+    extensionPoints = [
+    ]
+
+}
