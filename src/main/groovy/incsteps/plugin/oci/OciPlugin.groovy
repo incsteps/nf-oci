@@ -18,6 +18,8 @@ package incsteps.plugin.oci
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import incsteps.plugin.oci.nio.OciFileSystemProvider
+import nextflow.file.FileHelper
 import nextflow.plugin.BasePlugin
 import org.pf4j.PluginWrapper
 
@@ -60,5 +62,6 @@ class OciPlugin extends BasePlugin {
     @Override
     void start() {
         super.start()
+        FileHelper.getOrInstallProvider(OciFileSystemProvider)
     }
 }

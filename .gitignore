@@ -6,3 +6,5 @@
 # Ignore Gradle build output directory
 build
 work
+/src/e2e/.nf-test/
+/src/e2e/tmp/

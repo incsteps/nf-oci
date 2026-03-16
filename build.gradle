@@ -26,6 +26,7 @@ nextflowPlugin {
     provider = 'Incremental Steps'
     className = 'incsteps.plugin.oci.OciPlugin'
     extensionPoints = [
+            'incsteps.plugin.oci.nio.OciPathFactory'
     ]
 
 }

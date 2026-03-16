@@ -1,0 +1,18 @@
+mar-16 20:14:42.903 [main] INFO  com.askimed.nf.test.App - nf-test 0.9.3
+mar-16 20:14:42.917 [main] INFO  com.askimed.nf.test.App - Arguments: [test]
+mar-16 20:14:43.560 [main] INFO  com.askimed.nf.test.App - Nextflow Version: 25.10.0
+mar-16 20:14:43.562 [main] INFO  com.askimed.nf.test.commands.RunTestsCommand - Load config from file /home/jorge/incsteps/nextflow/nf-oci/src/e2e/nf-test.config...
+mar-16 20:14:43.847 [main] INFO  com.askimed.nf.test.lang.dependencies.DependencyResolver - Loaded 2 files from directory /home/jorge/incsteps/nextflow/nf-oci/src/e2e in 0.005 sec
+mar-16 20:14:43.847 [main] INFO  com.askimed.nf.test.lang.dependencies.DependencyResolver - Found 1 files containing tests.
+mar-16 20:14:43.847 [main] DEBUG com.askimed.nf.test.lang.dependencies.DependencyResolver - Found files: [/home/jorge/incsteps/nextflow/nf-oci/src/e2e/tests/basic.nf.test]
+mar-16 20:14:43.908 [main] INFO  com.askimed.nf.test.commands.RunTestsCommand - Found 1 tests to execute.
+mar-16 20:14:43.908 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Started test plan
+mar-16 20:14:43.908 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Running testsuite 'Test basic' from file '/home/jorge/incsteps/nextflow/nf-oci/src/e2e/tests/basic.nf.test'.
+mar-16 20:14:43.908 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Run test '89a5c6e8: Should run without failures'. type: com.askimed.nf.test.lang.pipeline.PipelineTest
+mar-16 20:14:48.631 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Init new snapshot file '/home/jorge/incsteps/nextflow/nf-oci/src/e2e/tests/basic.nf.test.snap'
+mar-16 20:14:48.633 [main] DEBUG com.askimed.nf.test.lang.extensions.Snapshot - Snapshot 'Should run without failures' not found.
+mar-16 20:14:48.633 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Created snapshot 'Should run without failures'
+mar-16 20:14:48.641 [main] DEBUG com.askimed.nf.test.lang.extensions.SnapshotFile - Wrote snapshots to file '/home/jorge/incsteps/nextflow/nf-oci/src/e2e/tests/basic.nf.test.snap'
+mar-16 20:14:48.641 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Test '89a5c6e8: Should run without failures' finished. status: PASSED
+mar-16 20:14:48.642 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Testsuite 'Test basic' finished. snapshot file: true, skipped tests: false, failed tests: false
+mar-16 20:14:48.644 [main] INFO  com.askimed.nf.test.core.TestExecutionEngine - Executed 1 tests. 0 tests failed. Done!

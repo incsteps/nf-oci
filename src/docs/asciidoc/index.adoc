@@ -19,3 +19,44 @@ plugins {
 
 Once installed the plugin provides several integrations with OCI platform
 
+== Configuration
+
+The nf-oci plugin is designed to be "zero-config" for users who already have the Oracle Cloud CLI installed. By default, the plugin automatically looks into the $HOME/.oci/ directory to extract the necessary API keys and configuration details.
+Standard Oracle Configuration
+
+The plugin parses the standard config file used by Oracle’s SDKs and CLI. This means you don't need to manually input OCIDs or fingerprints into your Nextflow scripts; the plugin handles the handshake using your local environment.
+Example: The ~/.oci/config file
+
+Your standard Oracle configuration file (located at ~/.oci/config) should look like this:
+
+[source]
+----
+[DEFAULT]
+user=ocid1.user.oc1..aaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxx
+fingerprint=12:34:56:78:90:ab:cd:ef:12:34:56:78:90:ab:cd:ef
+key_file=~/.oci/oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..aaaaaaaayyyyyyyyyyyyyyyyyyyyyyyyy
+region=us-ashburn-1
+----
+
+== ObjectStorage FileSystem
+
+The nf-oci plugin brings native Oracle Cloud Infrastructure support to the Nextflow ecosystem. It implements a dedicated file system provider that allows users to interact with OCI Object Storage using a standardized protocol.
+The oci:// Protocol
+
+Similar to how Nextflow handles s3:// for AWS, gs:// for Google Cloud, and az:// for Azure, the nf-oci plugin introduces the oci:// URI scheme. This allows you to point to buckets and objects within Oracle Cloud as if they were part of your local file system.
+
+Key Benefits
+
+- Seamless Integration: You can use oci:// paths for your input data, output directories, and even the pipeline work directory.
+
+- Unified Syntax: No need for custom scripts to download data; Nextflow handles the file staging and transfer automatically.
+
+- Parity with Major Clouds: Oracle Cloud is now a first-class citizen in the Nextflow cloud-native stack, providing the same "write once, run anywhere" experience available on other major providers.
+
+== Example
+
+Channel.fromPath('oci:///my-bucket-storage/*')
+    | filter { it.name.endsWith('.csv') }
+    | view
+
