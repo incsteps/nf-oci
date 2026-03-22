@@ -13,13 +13,14 @@ import java.nio.file.Path
 class FileHelperTest extends Specification{
 
     def setupSpec() {
+
         def CONFIG = [
                 oci: [
                         region: Region.US_PHOENIX_1,
                         tenantId:'test',
                         userId:'test',
                         fingerprint:'test',
-                        privateKey: this.getClass().getResourceAsStream("/private_pkcs8.pem").text
+                        privateKey: PrivKeyUtil.generatePrivateKeyPem()
                 ]
         ]
         Global.setConfig(CONFIG)
