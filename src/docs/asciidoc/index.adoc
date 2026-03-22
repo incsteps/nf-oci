@@ -56,7 +56,10 @@ Key Benefits
 
 == Example
 
+[source]
+----
 Channel.fromPath('oci:///my-bucket-storage/*')
     | filter { it.name.endsWith('.csv') }
     | view
+----
 
