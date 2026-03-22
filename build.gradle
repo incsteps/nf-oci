@@ -20,6 +20,10 @@ asciidoctor{
     }
 }
 
+test{
+    environment('OCI_CONFIG_FILE', file('src/test/resources/config.test').absolutePath)
+}
+
 nextflowPlugin {
     nextflowVersion = '25.04.4'
 

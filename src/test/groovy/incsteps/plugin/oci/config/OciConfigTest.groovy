@@ -8,7 +8,7 @@ class OciConfigTest extends Specification{
         given:
         def config = new OciConfig([:])
         when:
-        def region = config.defaultRegion
+        def region = config.region
         then:
         region
     }

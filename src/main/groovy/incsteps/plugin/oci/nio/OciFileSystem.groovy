@@ -20,23 +20,16 @@ class OciFileSystem extends FileSystem {
     private final String endpoint;
     private final String bucketName;
 
-    private final Properties properties;
-
-    OciFileSystem(OciFileSystemProvider provider, OciClient client, URI uri, Properties props) {
+    OciFileSystem(OciFileSystemProvider provider, OciClient client, URI uri) {
         this.provider = provider;
         this.client = client;
         this.endpoint = uri.getHost();
-        this.bucketName = OciPath.bucketName(uri);
-        this.properties = props;
+        this.bucketName = OciPath.bucketName(uri)
     }
 
     @Override
     FileSystemProvider provider() {
         return provider;
-    }
-
-    Properties properties() {
-        return properties;
     }
 
     @Override

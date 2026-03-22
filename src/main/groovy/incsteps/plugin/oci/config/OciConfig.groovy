@@ -11,7 +11,6 @@ import nextflow.config.schema.ConfigOption
 import nextflow.config.schema.ConfigScope
 import nextflow.script.dsl.Description
 
-
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -19,6 +18,7 @@ import java.nio.file.Paths
 @CompileStatic
 class OciConfig implements ConfigScope{
 
+    final AuthentificationDetailProvider authentificationProvider
     final OciObjectStorageConfig objectStorageConfig
 
     @ConfigOption
@@ -41,9 +41,14 @@ class OciConfig implements ConfigScope{
         this.profile = getOciProfile0(SysEnv.get(), opts)
         this.region = getOciRegion(SysEnv.get(), opts)
         this.objectStorageConfig = new OciObjectStorageConfig( (Map)opts.storage ?: Collections.emptyMap())
+        this.authentificationProvider = new AuthentificationDetailProvider(opts, region)
     }
 
-    String getDefaultRegion(){
+    AuthentificationDetailProvider getAuthentificationProvider(){
+        this.authentificationProvider
+    }
+
+    String getRegion(){
         return region ?: Region.US_PHOENIX_1.regionCode
     }
 
@@ -97,7 +102,7 @@ class OciConfig implements ConfigScope{
             log.warn("Missing nextflow session config object")
             return new OciConfig(Collections.emptyMap())
         }
-        new OciConfig( (Map)config.aws ?: Collections.emptyMap()  )
+        new OciConfig( (Map)config.oci ?: Collections.emptyMap()  )
     }
 
     static OciConfig config() {

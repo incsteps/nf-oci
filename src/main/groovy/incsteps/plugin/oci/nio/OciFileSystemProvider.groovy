@@ -15,24 +15,8 @@ import org.apache.commons.io.IOUtils
 
 import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
-import java.nio.file.AccessMode
-import java.nio.file.CopyOption
-import java.nio.file.DirectoryStream
-import java.nio.file.FileAlreadyExistsException
-import java.nio.file.FileStore
-import java.nio.file.FileSystem
-import java.nio.file.FileSystemAlreadyExistsException
-import java.nio.file.FileSystemNotFoundException
-import java.nio.file.Files
-import java.nio.file.LinkOption
-import java.nio.file.OpenOption
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.BasicFileAttributeView
-import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.attribute.FileAttribute
-import java.nio.file.attribute.FileAttributeView
-import java.nio.file.attribute.FileTime
+import java.nio.file.*
+import java.nio.file.attribute.*
 import java.nio.file.spi.FileSystemProvider
 import java.util.concurrent.TimeUnit
 
@@ -334,17 +318,10 @@ class OciFileSystemProvider extends FileSystemProvider{
         throw new UnsupportedOperationException();
     }
 
-    protected Properties loadOciProperties() {
-        Properties props = new Properties();
-        return props;
-    }
-
     protected OciFileSystem createFileSystem(URI uri, OciConfig config){
-        Properties props = loadOciProperties()
-
-        final OciClientFactory clientFactory = new OciClientFactory(config, config.region)
-        final OciClient client = new OciClient(clientFactory, props)
-        return new OciFileSystem(this, client, uri, props);
+        final OciClientFactory clientFactory = new OciClientFactory(config)
+        final OciClient client = clientFactory.createOciClient()
+        return new OciFileSystem(this, client, uri);
     }
 
     protected Path createTempDir() throws IOException {

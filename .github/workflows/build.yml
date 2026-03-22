@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java_version: [17]
+        java_version: [21]
 
     steps:
       - name: Environment
@@ -39,7 +39,7 @@ jobs:
         run: ./gradlew assemble
 
       - name: Tests
-        run: ./gradlew check
+        run: ./gradlew check -i
         env:
           GRADLE_OPTS: '-Dorg.gradle.daemon=false'
 

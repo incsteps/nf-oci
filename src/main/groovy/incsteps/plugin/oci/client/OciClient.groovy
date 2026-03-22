@@ -1,20 +1,19 @@
 package incsteps.plugin.oci.client
 
+
+import com.oracle.bmc.Region
+import com.oracle.bmc.http.client.jersey3.Jersey3HttpProvider
 import com.oracle.bmc.objectstorage.ObjectStorage
+import com.oracle.bmc.objectstorage.ObjectStorageClient
 import com.oracle.bmc.objectstorage.model.BucketSummary
 import com.oracle.bmc.objectstorage.model.CopyObjectDetails
 import com.oracle.bmc.objectstorage.requests.*
-import com.oracle.bmc.objectstorage.responses.CopyObjectResponse
-import com.oracle.bmc.objectstorage.responses.DeleteObjectResponse
-import com.oracle.bmc.objectstorage.responses.GetBucketResponse
-import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse
-import com.oracle.bmc.objectstorage.responses.ListBucketsResponse
-import com.oracle.bmc.objectstorage.responses.ListObjectsResponse
-import com.oracle.bmc.objectstorage.responses.PutObjectResponse
+import com.oracle.bmc.objectstorage.responses.*
 import com.oracle.bmc.requests.BmcRequest
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import incsteps.plugin.oci.OciPlugin
+import incsteps.plugin.oci.config.OciConfig
 import nextflow.util.Threads
 
 import java.util.concurrent.Semaphore
@@ -24,19 +23,27 @@ import java.util.function.Supplier
 @Slf4j
 class OciClient {
 
-    private ObjectStorage client
-    private OciClientFactory clientFactory
+    private ObjectStorage clientObjectStorage
+    private OciConfig ociConfig
     private Semaphore semaphore
     private Properties props
     private String nameSpace
 
-    OciClient(OciClientFactory clientFactory, Properties props){
+    OciClient(OciConfig ociConfig){
         int maxConnections = 10
-        this.clientFactory = clientFactory
+        this.ociConfig = ociConfig
         this.props = props
-        this.client = clientFactory.ociClient
-        this.semaphore = Threads.useVirtual() ? new Semaphore(maxConnections) : null;
-        this.nameSpace = runWithPermit(()->safeNameSpace())
+        this.clientObjectStorage = getObjectStorageClient()
+        this.semaphore = Threads.useVirtual() ? new Semaphore(maxConnections) : null
+    }
+
+    private ObjectStorageClient getObjectStorageClient(){
+        final useRegion = ociConfig.region
+        final provider = ociConfig.authentificationProvider?.provider
+        return ObjectStorageClient.builder()
+                .httpProvider(Jersey3HttpProvider.instance)
+                .region(Region.fromRegionCode(useRegion))
+                .build(provider)
     }
 
     private <T> T runWithPermit(Supplier<T> action) {
@@ -54,8 +61,14 @@ class OciClient {
         }
     }
 
+    String getNameSpace(){
+        if(!nameSpace)
+            nameSpace = runWithPermit(()->safeNameSpace())
+        nameSpace
+    }
+
     private String safeNameSpace(){
-        GetNamespaceResponse namespaceResponse = client.getNamespace(GetNamespaceRequest.builder().build())
+        GetNamespaceResponse namespaceResponse = clientObjectStorage.getNamespace(GetNamespaceRequest.builder().build())
         namespaceResponse.value
     }
 
@@ -64,13 +77,15 @@ class OciClient {
     }
 
     private List<BucketSummary> safeListBuckets() {
-        BmcRequest.Builder listBucketsBuilder = ListBucketsRequest.builder()
+        BmcRequest.Builder listBucketsBuilder = ListBucketsRequest
+                .builder()
+                .namespaceName(getNameSpace())
 
         List<BucketSummary> ret = []
         String nextToken = null
         do {
             listBucketsBuilder.page(nextToken)
-            ListBucketsResponse listBucketsResponse = client.listBuckets(listBucketsBuilder.build())
+            ListBucketsResponse listBucketsResponse = clientObjectStorage.listBuckets(listBucketsBuilder.build())
             ret.addAll(listBucketsResponse.items)
             nextToken = listBucketsResponse.getOpcNextPage()
         } while (nextToken != null)
@@ -80,46 +95,46 @@ class OciClient {
 
     ListObjectsResponse listObjects(String bucket, String key, String delimiter="/") {
         ListObjectsRequest request = ListObjectsRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(bucket)
                 .prefix(key)
                 .delimiter(delimiter)
                 .fields('name,timeCreated,timeModified,storageTier,size')
                 .build()
-        return runWithPermit(() -> client.listObjects(request));
+        return runWithPermit(() -> clientObjectStorage.listObjects(request));
     }
 
     InputStream getInputStream(String bucketName, String key) {
         GetObjectRequest.Builder reqBuilder = GetObjectRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(bucketName)
                 .objectName(key)
         return runWithPermit(() -> {
-            def obj = client.getObject(reqBuilder.build())
+            def obj = clientObjectStorage.getObject(reqBuilder.build())
             obj.inputStream
         })
     }
 
     GetBucketResponse getBucketMetadata(String bucketName){
         GetBucketRequest request = GetBucketRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(bucketName)
                 .build()
-        runWithPermit(()->client.getBucket(request))
+        runWithPermit(()->clientObjectStorage.getBucket(request))
     }
 
     DeleteObjectResponse deleteObject(String bucket, String keyName){
         DeleteObjectRequest request = DeleteObjectRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(bucket)
                 .objectName(keyName)
                 .build()
-        runWithPermit(()->client.deleteObject(request))
+        runWithPermit(()->clientObjectStorage.deleteObject(request))
     }
 
     PutObjectResponse putObject(String bucket, String keyName, InputStream inputStream, List tags, String contentType, long contentLength) {
         PutObjectRequest.Builder reqBuilder = PutObjectRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(bucket)
                 .objectName(keyName)
                 .contentType(contentType)
@@ -127,7 +142,7 @@ class OciClient {
                 .putObjectBody(inputStream)
         PutObjectRequest request = reqBuilder.build()
         runWithPermit(()->{
-            client.putObject(request)
+            clientObjectStorage.putObject(request)
         })
     }
 
@@ -135,15 +150,15 @@ class OciClient {
         CopyObjectDetails details = CopyObjectDetails.builder()
                 .sourceObjectName(sourceObjectName)
                 .destinationBucket(destinationBucket)
-                .destinationNamespace(nameSpace)
+                .destinationNamespace(getNameSpace())
                 .destinationObjectName(destinationObjetName)
                 .build()
         CopyObjectRequest request = CopyObjectRequest.builder()
-                .namespaceName(nameSpace)
+                .namespaceName(getNameSpace())
                 .bucketName(sourceBucket)
                 .copyObjectDetails(details)
                 .build()
-        runWithPermit(()->client.copyObject(request))
+        runWithPermit(()->clientObjectStorage.copyObject(request))
     }
 
 

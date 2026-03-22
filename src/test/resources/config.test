@@ -1,0 +1,6 @@
+[DEFAULT]
+user=ocid1.user.oc1..example
+fingerprint=37:79:50:c2:2d:1f:eb:6c:dd:1e:f5:6a:21:18:44:41
+key_file=~/.oci/sessions/DEFAULT/oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..example
+region=eu-madrid-1

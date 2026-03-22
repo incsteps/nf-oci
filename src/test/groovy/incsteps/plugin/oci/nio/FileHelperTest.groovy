@@ -1,5 +1,6 @@
 package incsteps.plugin.oci.nio
 
+import com.oracle.bmc.Region
 import nextflow.Global
 import nextflow.Session
 import nextflow.SysEnv
@@ -12,14 +13,20 @@ import java.nio.file.Path
 class FileHelperTest extends Specification{
 
     def setupSpec() {
-        def CONFIG = [oci: [
-                region: 'test'
-        ]]
-        Global.session = Mock(Session) { getConfig() >> CONFIG }
+        def CONFIG = [
+                oci: [
+                        region: Region.US_PHOENIX_1,
+                        tenantId:'test',
+                        userId:'test',
+                        fingerprint:'test',
+                        privateKey: this.getClass().getResourceAsStream("/private_pkcs8.pem").text
+                ]
+        ]
+        Global.setConfig(CONFIG)
     }
 
     def cleanupSpec() {
-        Global.session = null
+        Global.setConfig(null)
     }
 
     @Unroll
