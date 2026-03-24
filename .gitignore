@@ -8,3 +8,4 @@ build
 work
 /src/e2e/.nf-test/
 /src/e2e/tmp/
+/src/e2e/.nf-test.log

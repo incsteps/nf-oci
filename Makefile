@@ -22,4 +22,4 @@ release:
 
 e2e:
 	./gradlew installPlugin -Pversion=99.99.99
-	cd src/e2e; OCI_PLUGIN_VERSION=99.99.99 ./nf-test test ${test}
+	cd src/e2e; OCI_PLUGIN_VERSION=99.99.99 ./nf-test test
