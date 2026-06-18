@@ -2,6 +2,8 @@ package incsteps.plugin.oci.client
 
 
 import com.oracle.bmc.Region
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider
+import com.oracle.bmc.auth.RegionProvider
 import com.oracle.bmc.http.client.jersey3.Jersey3HttpProvider
 import com.oracle.bmc.objectstorage.ObjectStorage
 import com.oracle.bmc.objectstorage.ObjectStorageClient
@@ -38,12 +40,29 @@ class OciClient {
     }
 
     private ObjectStorageClient getObjectStorageClient(){
-        final useRegion = ociConfig.region
         final provider = ociConfig.authentificationProvider?.provider
         return ObjectStorageClient.builder()
                 .httpProvider(Jersey3HttpProvider.instance)
-                .region(Region.fromRegionCode(useRegion))
+                .region(resolveRegion(provider))
                 .build(provider)
+    }
+
+    /**
+     * Determines the region for the client. An explicitly configured region always
+     * wins; otherwise, for Kubernetes-friendly providers (Workload Identity, Instance
+     * Principals) the region advertised by the environment is used, falling back to
+     * the default region only as a last resort.
+     */
+    private Region resolveRegion(AbstractAuthenticationDetailsProvider provider){
+        final configured = ociConfig.configuredRegion
+        if( configured )
+            return Region.fromRegionCode(configured)
+        if( provider instanceof RegionProvider ) {
+            final region = ((RegionProvider) provider).region
+            if( region )
+                return region
+        }
+        return Region.US_PHOENIX_1
     }
 
     private <T> T runWithPermit(Supplier<T> action) {

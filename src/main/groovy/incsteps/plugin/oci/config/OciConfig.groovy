@@ -33,6 +33,22 @@ class OciConfig implements ConfigScope{
     """)
     final String profile
 
+    @ConfigOption
+    @Description("""
+        Authentication method to use. One of `auto` (default), `workload_identity`
+        (OKE Workload Identity, recommended for Kubernetes pods), `instance_principal`
+        (OCI compute instances / OKE worker nodes), `resource_principal`, `simple`
+        (inline API key) or `config_file` (`~/.oci/config`).
+    """)
+    final String authType
+
+    @ConfigOption
+    @Description("""
+        Path to the Kubernetes service account token used by `workload_identity`
+        authentication. Defaults to the standard pod mount path.
+    """)
+    final String tokenPath
+
     OciConfig(){
         this([:])
     }
@@ -40,8 +56,13 @@ class OciConfig implements ConfigScope{
     OciConfig(Map opts){
         this.profile = getOciProfile0(SysEnv.get(), opts)
         this.region = getOciRegion(SysEnv.get(), opts)
+        this.authType = getOciAuthType(SysEnv.get(), opts)
+        this.tokenPath = opts.tokenPath as String
         this.objectStorageConfig = new OciObjectStorageConfig( (Map)opts.storage ?: Collections.emptyMap())
-        this.authentificationProvider = new AuthentificationDetailProvider(opts, region)
+        // make the resolved auth settings visible to the provider regardless of their source
+        final Map authOpts = new LinkedHashMap(opts)
+        authOpts.authType = authType
+        this.authentificationProvider = new AuthentificationDetailProvider(authOpts, region)
     }
 
     AuthentificationDetailProvider getAuthentificationProvider(){
@@ -50,6 +71,11 @@ class OciConfig implements ConfigScope{
 
     String getRegion(){
         return region ?: Region.US_PHOENIX_1.regionCode
+    }
+
+    /** The region explicitly set via config/env, or {@code null} if unset. */
+    String getConfiguredRegion(){
+        return region
     }
 
     static protected String getOciProfile0(Map env, Map<String,Object> config) {
@@ -63,6 +89,19 @@ class OciConfig implements ConfigScope{
 
         if( env?.containsKey('OCI_DEFAULT_PROFILE'))
             return env.get('OCI_DEFAULT_PROFILE')
+
+        return null
+    }
+
+
+    static protected String getOciAuthType(Map env, Map<String,Object> config) {
+
+        final authType = config?.authType as String
+        if( authType )
+            return authType
+
+        if( env?.containsKey('OCI_AUTH_TYPE'))
+            return env.get('OCI_AUTH_TYPE')
 
         return null
     }

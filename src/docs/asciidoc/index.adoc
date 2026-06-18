@@ -39,6 +39,81 @@ tenancy=ocid1.tenancy.oc1..aaaaaaaayyyyyyyyyyyyyyyyyyyyyyyyy
 region=us-ashburn-1
 ----
 
+== Authentication
+
+The plugin supports several authentication methods. By default (`authType = 'auto'`)
+it picks the most appropriate one for the current environment, preferring
+credential-less methods so the same configuration works locally and inside
+Kubernetes without shipping API keys into your containers.
+
+You can force a specific method with the `oci.authType` config option (or the
+`OCI_AUTH_TYPE` environment variable):
+
+[cols="1,3", options="header"]
+|===
+| `authType` | Description
+
+| `auto` (default)
+| Detect the best method: inline credentials, then OKE Workload Identity, then
+  Resource Principals, then the local `~/.oci/config` file.
+
+| `workload_identity`
+| *OKE Workload Identity* — the recommended method for pods running in an Oracle
+  Kubernetes Engine (enhanced) cluster. No API keys are needed; OKE mounts a
+  service account token into the pod and the plugin federates it to an OCI
+  principal.
+
+| `instance_principal`
+| *Instance Principals* — for processes running on any OCI compute instance,
+  including OKE worker nodes. The instance's dynamic group grants access.
+
+| `resource_principal`
+| *Resource Principals* — for OCI Functions and similar managed resources.
+
+| `simple`
+| Inline API key credentials supplied directly in the Nextflow config.
+
+| `config_file`
+| The standard `~/.oci/config` file.
+|===
+
+=== Kubernetes / OKE (recommended)
+
+For workloads running in OKE, use Workload Identity so no long-lived credentials
+are stored in the pod. First grant access by creating the IAM policy and an
+enhanced-cluster service account (see the
+https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contenggrantingworkloadaccesstoresources.htm[OCI docs]),
+then configure the plugin:
+
+.nextflow.config
+[source]
+----
+oci {
+    authType = 'workload_identity'
+    region   = 'us-ashburn-1'
+}
+----
+
+The service account token is read from the standard pod mount path
+(`/var/run/secrets/kubernetes.io/serviceaccount/token`). Override it with
+`oci.tokenPath` if your cluster mounts it elsewhere.
+
+With `authType = 'auto'` (the default) the plugin detects an OKE Workload Identity
+environment automatically, so explicitly setting `authType` is optional.
+
+=== Inline credentials
+
+[source]
+----
+oci {
+    region      = 'us-ashburn-1'
+    tenantId    = 'ocid1.tenancy.oc1..aaaa...'
+    userId      = 'ocid1.user.oc1..aaaa...'
+    fingerprint = '12:34:56:78:90:ab:cd:ef:12:34:56:78:90:ab:cd:ef'
+    privateKey  = '-----BEGIN PRIVATE KEY-----\n...'
+}
+----
+
 == ObjectStorage FileSystem
 
 The nf-oci plugin brings native Oracle Cloud Infrastructure support to the Nextflow ecosystem. It implements a dedicated file system provider that allows users to interact with OCI Object Storage using a standardized protocol.
