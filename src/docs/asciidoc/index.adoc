@@ -41,34 +41,27 @@ region=us-ashburn-1
 
 == Authentication
 
-The plugin supports several authentication methods. By default (`authType = 'auto'`)
-it picks the most appropriate one for the current environment, preferring
-credential-less methods so the same configuration works locally and inside
-Kubernetes without shipping API keys into your containers.
+By default (`authType = 'auto'`) the plugin uses inline API key credentials when
+they are supplied in the config, otherwise it falls back to the local
+`~/.oci/config` file — the original behaviour. For Kubernetes pods running in OKE
+you can instead use Workload Identity, a credential-less method that avoids
+shipping API keys into your containers.
 
-You can force a specific method with the `oci.authType` config option (or the
-`OCI_AUTH_TYPE` environment variable):
+Select a method with the `oci.authType` config option (or the `OCI_AUTH_TYPE`
+environment variable):
 
 [cols="1,3", options="header"]
 |===
 | `authType` | Description
 
 | `auto` (default)
-| Detect the best method: inline credentials, then OKE Workload Identity, then
-  Resource Principals, then the local `~/.oci/config` file.
+| Inline API key credentials when supplied, otherwise the local `~/.oci/config` file.
 
 | `workload_identity`
 | *OKE Workload Identity* — the recommended method for pods running in an Oracle
   Kubernetes Engine (enhanced) cluster. No API keys are needed; OKE mounts a
   service account token into the pod and the plugin federates it to an OCI
   principal.
-
-| `instance_principal`
-| *Instance Principals* — for processes running on any OCI compute instance,
-  including OKE worker nodes. The instance's dynamic group grants access.
-
-| `resource_principal`
-| *Resource Principals* — for OCI Functions and similar managed resources.
 
 | `simple`
 | Inline API key credentials supplied directly in the Nextflow config.
@@ -94,12 +87,8 @@ oci {
 }
 ----
 
-The service account token is read from the standard pod mount path
-(`/var/run/secrets/kubernetes.io/serviceaccount/token`). Override it with
-`oci.tokenPath` if your cluster mounts it elsewhere.
-
-With `authType = 'auto'` (the default) the plugin detects an OKE Workload Identity
-environment automatically, so explicitly setting `authType` is optional.
+The service account token is read from the standard OKE pod mount path by default.
+Override it with `oci.tokenPath` if your cluster mounts it elsewhere.
 
 === Inline credentials
 

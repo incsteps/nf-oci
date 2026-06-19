@@ -35,9 +35,9 @@ class OciConfig implements ConfigScope{
 
     @ConfigOption
     @Description("""
-        Authentication method to use. One of `auto` (default), `workload_identity`
-        (OKE Workload Identity, recommended for Kubernetes pods), `instance_principal`
-        (OCI compute instances / OKE worker nodes), `resource_principal`, `simple`
+        Authentication method to use. One of `auto` (default, uses inline API key
+        credentials when supplied otherwise `~/.oci/config`), `workload_identity`
+        (OKE Workload Identity, recommended for Kubernetes pods), `simple`
         (inline API key) or `config_file` (`~/.oci/config`).
     """)
     final String authType
@@ -45,7 +45,7 @@ class OciConfig implements ConfigScope{
     @ConfigOption
     @Description("""
         Path to the Kubernetes service account token used by `workload_identity`
-        authentication. Defaults to the standard pod mount path.
+        authentication. Defaults to the standard OKE pod mount path.
     """)
     final String tokenPath
 

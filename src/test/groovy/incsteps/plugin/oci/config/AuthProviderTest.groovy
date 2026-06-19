@@ -61,25 +61,19 @@ class AuthProviderTest extends Specification{
     }
 
     @Unroll
-    void "normalizes authType alias '#alias' to '#expected'"(){
+    void "normalizes authType '#raw' to '#expected'"(){
         expect:
-        AuthentificationDetailProvider.normalizeAuthType(alias) == expected
+        AuthentificationDetailProvider.normalizeAuthType(raw) == expected
 
         where:
-        alias                    | expected
-        null                     | AuthentificationDetailProvider.AUTH_AUTO
-        ''                       | AuthentificationDetailProvider.AUTH_AUTO
-        'auto'                   | AuthentificationDetailProvider.AUTH_AUTO
-        'simple'                 | AuthentificationDetailProvider.AUTH_SIMPLE
-        'api_key'                | AuthentificationDetailProvider.AUTH_SIMPLE
-        'config_file'            | AuthentificationDetailProvider.AUTH_CONFIG_FILE
-        'config'                 | AuthentificationDetailProvider.AUTH_CONFIG_FILE
-        'instance_principal'     | AuthentificationDetailProvider.AUTH_INSTANCE_PRINCIPAL
-        'instance-principal'     | AuthentificationDetailProvider.AUTH_INSTANCE_PRINCIPAL
-        'resource_principal'     | AuthentificationDetailProvider.AUTH_RESOURCE_PRINCIPAL
-        'workload_identity'      | AuthentificationDetailProvider.AUTH_WORKLOAD_IDENTITY
-        'OKE'                    | AuthentificationDetailProvider.AUTH_WORKLOAD_IDENTITY
-        'Workload-Identity'      | AuthentificationDetailProvider.AUTH_WORKLOAD_IDENTITY
+        raw                  | expected
+        null                 | AuthentificationDetailProvider.AUTH_AUTO
+        ''                   | AuthentificationDetailProvider.AUTH_AUTO
+        'auto'               | AuthentificationDetailProvider.AUTH_AUTO
+        'simple'             | AuthentificationDetailProvider.AUTH_SIMPLE
+        'config_file'        | AuthentificationDetailProvider.AUTH_CONFIG_FILE
+        'workload_identity'  | AuthentificationDetailProvider.AUTH_WORKLOAD_IDENTITY
+        'WORKLOAD_IDENTITY'  | AuthentificationDetailProvider.AUTH_WORKLOAD_IDENTITY
     }
 
     @IgnoreIf({ !new File(System.getProperty("user.home")+"/.oci/config").exists() })

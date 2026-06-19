@@ -20,12 +20,12 @@ class OciConfigTest extends Specification{
 
     void "authType falls back to OCI_AUTH_TYPE env"(){
         expect:
-        OciConfig.getOciAuthType([OCI_AUTH_TYPE:'instance_principal'], [:]) == 'instance_principal'
+        OciConfig.getOciAuthType([OCI_AUTH_TYPE:'config_file'], [:]) == 'config_file'
     }
 
     void "config authType takes precedence over env"(){
         expect:
-        OciConfig.getOciAuthType([OCI_AUTH_TYPE:'instance_principal'], [authType:'workload_identity']) == 'workload_identity'
+        OciConfig.getOciAuthType([OCI_AUTH_TYPE:'config_file'], [authType:'workload_identity']) == 'workload_identity'
     }
 
     void "authType defaults to null when unset"(){

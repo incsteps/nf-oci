@@ -49,9 +49,8 @@ class OciClient {
 
     /**
      * Determines the region for the client. An explicitly configured region always
-     * wins; otherwise, for Kubernetes-friendly providers (Workload Identity, Instance
-     * Principals) the region advertised by the environment is used, falling back to
-     * the default region only as a last resort.
+     * wins; otherwise, when the provider advertises one (e.g. OKE Workload Identity)
+     * that region is used, falling back to the default region only as a last resort.
      */
     private Region resolveRegion(AbstractAuthenticationDetailsProvider provider){
         final configured = ociConfig.configuredRegion
