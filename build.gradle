@@ -7,6 +7,9 @@ dependencies {
     compileOnly 'io.nextflow:nf-lang:25.04.4'
     implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.80.3'
     implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.80.3'
+    // Enables OKE Workload Identity authentication for pods running in
+    // Oracle Kubernetes Engine (Instance/Resource principals ship in the common SDK).
+    implementation 'com.oracle.oci.sdk:oci-java-sdk-addons-oke-workload-identity:3.80.3'
 }
 
 asciidoctor{

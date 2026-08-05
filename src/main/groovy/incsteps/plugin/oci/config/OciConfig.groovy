@@ -23,7 +23,8 @@ class OciConfig implements ConfigScope{
 
     @ConfigOption
     @Description("""
-        Oci region (e.g. `us-east-1`).
+        Oci region, given either as a region id (e.g. `uk-london-1`) or as a
+        region code (e.g. `lhr`).
     """)
     final String region
 
@@ -33,6 +34,23 @@ class OciConfig implements ConfigScope{
     """)
     final String profile
 
+    @ConfigOption
+    @Description("""
+        Authentication method to use. One of `auto` (default, tries inline API key
+        credentials, then `~/.oci/config`, then the instance principal),
+        `workload_identity` (OKE Workload Identity, recommended for Kubernetes pods),
+        `instance_principal` (the identity of the OCI compute instance),
+        `simple` (inline API key) or `config_file` (`~/.oci/config`).
+    """)
+    final String authType
+
+    @ConfigOption
+    @Description("""
+        Path to the Kubernetes service account token used by `workload_identity`
+        authentication. Defaults to the standard OKE pod mount path.
+    """)
+    final String tokenPath
+
     OciConfig(){
         this([:])
     }
@@ -40,8 +58,13 @@ class OciConfig implements ConfigScope{
     OciConfig(Map opts){
         this.profile = getOciProfile0(SysEnv.get(), opts)
         this.region = getOciRegion(SysEnv.get(), opts)
+        this.authType = getOciAuthType(SysEnv.get(), opts)
+        this.tokenPath = opts.tokenPath as String
         this.objectStorageConfig = new OciObjectStorageConfig( (Map)opts.storage ?: Collections.emptyMap())
-        this.authentificationProvider = new AuthentificationDetailProvider(opts, region)
+        // make the resolved auth settings visible to the provider regardless of their source
+        final Map authOpts = new LinkedHashMap(opts)
+        authOpts.authType = authType
+        this.authentificationProvider = new AuthentificationDetailProvider(authOpts, region)
     }
 
     AuthentificationDetailProvider getAuthentificationProvider(){
@@ -50,6 +73,11 @@ class OciConfig implements ConfigScope{
 
     String getRegion(){
         return region ?: Region.US_PHOENIX_1.regionCode
+    }
+
+    /** The region explicitly set via config/env, or {@code null} if unset. */
+    String getConfiguredRegion(){
+        return region
     }
 
     static protected String getOciProfile0(Map env, Map<String,Object> config) {
@@ -63,6 +91,19 @@ class OciConfig implements ConfigScope{
 
         if( env?.containsKey('OCI_DEFAULT_PROFILE'))
             return env.get('OCI_DEFAULT_PROFILE')
+
+        return null
+    }
+
+
+    static protected String getOciAuthType(Map env, Map<String,Object> config) {
+
+        final authType = config?.authType as String
+        if( authType )
+            return authType
+
+        if( env?.containsKey('OCI_AUTH_TYPE'))
+            return env.get('OCI_AUTH_TYPE')
 
         return null
     }
