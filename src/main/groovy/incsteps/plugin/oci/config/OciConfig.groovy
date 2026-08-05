@@ -23,7 +23,8 @@ class OciConfig implements ConfigScope{
 
     @ConfigOption
     @Description("""
-        Oci region (e.g. `us-east-1`).
+        Oci region, given either as a region id (e.g. `uk-london-1`) or as a
+        region code (e.g. `lhr`).
     """)
     final String region
 
@@ -35,10 +36,11 @@ class OciConfig implements ConfigScope{
 
     @ConfigOption
     @Description("""
-        Authentication method to use. One of `auto` (default, uses inline API key
-        credentials when supplied otherwise `~/.oci/config`), `workload_identity`
-        (OKE Workload Identity, recommended for Kubernetes pods), `simple`
-        (inline API key) or `config_file` (`~/.oci/config`).
+        Authentication method to use. One of `auto` (default, tries inline API key
+        credentials, then `~/.oci/config`, then the instance principal),
+        `workload_identity` (OKE Workload Identity, recommended for Kubernetes pods),
+        `instance_principal` (the identity of the OCI compute instance),
+        `simple` (inline API key) or `config_file` (`~/.oci/config`).
     """)
     final String authType
 

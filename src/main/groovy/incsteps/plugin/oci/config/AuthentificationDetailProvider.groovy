@@ -1,9 +1,9 @@
 package incsteps.plugin.oci.config
 
 import com.oracle.bmc.ConfigFileReader
-import com.oracle.bmc.Region
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider
 import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider
 import groovy.transform.CompileStatic
@@ -23,6 +23,8 @@ import java.nio.charset.StandardCharsets
  *   <li>{@code workload_identity} - OKE Workload Identity, for pods running in an
  *       Oracle Kubernetes Engine (enhanced) cluster. The credential-less method for
  *       Kubernetes workloads.</li>
+ *   <li>{@code instance_principal} - the identity of the OCI compute instance the
+ *       plugin runs on. The credential-less method outside Kubernetes.</li>
  *   <li>{@code simple} - explicit API key credentials supplied inline.</li>
  *   <li>{@code config_file} - the standard {@code ~/.oci/config} file.</li>
  * </ul>
@@ -35,6 +37,15 @@ class AuthentificationDetailProvider {
     static final String AUTH_SIMPLE = 'simple'
     static final String AUTH_CONFIG_FILE = 'config_file'
     static final String AUTH_WORKLOAD_IDENTITY = 'workload_identity'
+    static final String AUTH_INSTANCE_PRINCIPAL = 'instance_principal'
+
+    /**
+     * Auto-detection may run on a machine that is not an OCI instance at all, where the
+     * instance metadata service is simply unroutable. Probe it briefly so that case fails
+     * fast with a legible error instead of retrying for minutes.
+     */
+    private static final int AUTO_DETECT_RETRIES = 1
+    private static final int AUTO_DETECT_TIMEOUT_MILLIS = 2_000
 
     final AbstractAuthenticationDetailsProvider provider
 
@@ -55,14 +66,51 @@ class AuthentificationDetailProvider {
                 return buildConfigFileProvider(opts)
             case AUTH_WORKLOAD_IDENTITY:
                 return buildWorkloadIdentityProvider(opts, region)
+            case AUTH_INSTANCE_PRINCIPAL:
+                return buildInstancePrincipalProvider(false)
             default:
                 return autoDetect(opts, region)
         }
     }
 
-    /** Inline API key credentials when supplied, otherwise the local config file. */
+    /**
+     * Inline API key credentials when supplied, otherwise the local config file, otherwise
+     * the instance principal. The instance principal comes last because it is the only
+     * candidate that has to reach the network to be ruled out, and because a machine with
+     * a config file has told us which identity to prefer.
+     */
     private AbstractAuthenticationDetailsProvider autoDetect(Map opts, String region) {
-        return buildSimpleProvider(opts, region) ?: buildConfigFileProvider(opts)
+        final simple = buildSimpleProvider(opts, region)
+        if (simple)
+            return simple
+
+        final configFile = tryConfigFileProvider(opts)
+        if (configFile)
+            return configFile
+
+        log.debug("No inline OCI credentials and no usable config file -- trying instance principal")
+        try {
+            return buildInstancePrincipalProvider(true)
+        }
+        catch (Exception e) {
+            throw new IllegalStateException("Unable to determine OCI credentials: no inline API key " +
+                    "was configured, no usable OCI config file was found, and this host is not an OCI " +
+                    "instance. Set 'oci.authType' to select an authentication method explicitly.", e)
+        }
+    }
+
+    /**
+     * The config file provider, or {@code null} when there is no config file to read. A file
+     * that exists but cannot be used is a misconfiguration, so those errors propagate.
+     */
+    protected AbstractAuthenticationDetailsProvider tryConfigFileProvider(Map opts) {
+        try {
+            return buildConfigFileProvider(opts)
+        }
+        catch (IOException e) {
+            log.debug("No OCI config file available -- ${e.message}")
+            return null
+        }
     }
 
     protected boolean hasSimpleCredentials(Map opts) {
@@ -79,7 +127,7 @@ class AuthentificationDetailProvider {
                 .fingerprint(opts.get('fingerprint').toString())
                 .privateKeySupplier(() -> new ByteArrayInputStream(privKey.getBytes(StandardCharsets.UTF_8)))
         if (region)
-            builder.region(Region.fromRegionCode(region))
+            builder.region(OciRegions.of(region))
         return builder.build()
     }
 
@@ -96,7 +144,23 @@ class AuthentificationDetailProvider {
         if (tokenPath)
             builder.tokenPath(tokenPath)
         if (region)
-            builder.region(Region.fromRegionCode(region))
+            builder.region(OciRegions.of(region))
+        return builder.build()
+    }
+
+    /**
+     * The instance principal derives both its credentials and its region from the instance
+     * metadata service, so there is nothing to configure and no region to pass.
+     *
+     * @param failFast shorten the metadata probe, for use during auto-detection where this
+     *      host may not be an OCI instance at all.
+     */
+    protected AbstractAuthenticationDetailsProvider buildInstancePrincipalProvider(boolean failFast) {
+        final builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
+        if (failFast) {
+            builder.detectEndpointRetries(AUTO_DETECT_RETRIES)
+            builder.timeoutForEachRetry(AUTO_DETECT_TIMEOUT_MILLIS)
+        }
         return builder.build()
     }
 
@@ -120,9 +184,11 @@ class AuthentificationDetailProvider {
                 return AUTH_CONFIG_FILE
             case AUTH_WORKLOAD_IDENTITY:
                 return AUTH_WORKLOAD_IDENTITY
+            case AUTH_INSTANCE_PRINCIPAL:
+                return AUTH_INSTANCE_PRINCIPAL
             default:
                 throw new IllegalArgumentException("Unknown OCI authType '${raw}'. Valid values: " +
-                        "auto, simple, config_file, workload_identity")
+                        "auto, simple, config_file, workload_identity, instance_principal")
         }
     }
 }
